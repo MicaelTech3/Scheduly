@@ -53,6 +53,14 @@ export default function OwnerAgendamentos() {
 
     const pendentes = agendamentos.filter(a => a.status === "pendente").length;
 
+    const aceitar = async (ag) => {
+        setSaving(true);
+        await updateAgendamento(empresa.id, ag.id, { status: "agendado" });
+        toast(`✅ Agendamento de ${ag.clienteNome} aceito!`);
+        setSaving(false);
+        load();
+    };
+
     const abrirPagamento = (ag) => {
         setMetodoPag("");
         setDataPagAgendada("");
@@ -161,7 +169,7 @@ export default function OwnerAgendamentos() {
                                                             <div className="action-btns">
                                                                 {a.status === "pendente" && (
                                                                     <>
-                                                                        <button className="o-btn o-btn-primary o-btn-sm" onClick={() => abrirPagamento(a)} disabled={saving}>Aceitar e Pagar</button>
+                                                                        <button className="o-btn o-btn-primary o-btn-sm" onClick={() => aceitar(a)} disabled={saving}>✅ Aceitar</button>
                                                                         <button className="o-btn o-btn-danger o-btn-sm" onClick={() => setCancelModal(a)}>Cancelar</button>
                                                                     </>
                                                                 )}
@@ -208,7 +216,7 @@ export default function OwnerAgendamentos() {
                                                 <div className="mobile-card-actions" style={{ marginTop: 10 }}>
                                                     {a.status === "pendente" && (
                                                         <>
-                                                            <button className="o-btn o-btn-primary o-btn-sm" onClick={() => abrirPagamento(a)} disabled={saving}>Aceitar e Pagar</button>
+                                                                <button className="o-btn o-btn-primary o-btn-sm" onClick={() => aceitar(a)} disabled={saving}>✅ Aceitar</button>
                                                             <button className="o-btn o-btn-danger o-btn-sm" onClick={() => setCancelModal(a)}>Cancelar</button>
                                                         </>
                                                     )}
@@ -234,7 +242,7 @@ export default function OwnerAgendamentos() {
                 <div className="owner-modal-overlay" onClick={() => setPagamentoModal(null)}>
                     <div className="owner-modal" onClick={e => e.stopPropagation()}>
                         <div className="owner-modal-handle" />
-                        <h3>{pagamentoModal.status === "pendente" ? "✅ Aceitar e Registrar Pagamento" : "💰 Registrar Pagamento"}</h3>
+                        <h3>💰 Registrar Pagamento</h3>
 
                         <div style={{ background: "#f8f8f8", borderRadius: 12, padding: 14, marginBottom: 20 }}>
                             <div style={{ fontWeight: 600, marginBottom: 4 }}>{pagamentoModal.clienteNome}</div>

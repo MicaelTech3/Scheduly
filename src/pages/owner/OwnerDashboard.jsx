@@ -13,11 +13,6 @@ export default function OwnerDashboard() {
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
-  // Modal de Pagamento Rápido
-  const [pagamentoModal, setPagamentoModal] = useState(null);
-  const [metodoPag, setMetodoPag] = useState("");
-  const [dataPagAgendada, setDataPagAgendada] = useState("");
 
   const load = async () => {
     if (!empresa?.id) return;
@@ -61,34 +56,11 @@ export default function OwnerDashboard() {
     return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   };
 
-  const METODOS = [
-    { key: "pix", label: "Pix", icon: "⚡" },
-    { key: "cartao", label: "Cartão", icon: "💳" },
-    { key: "dinheiro", label: "Dinheiro", icon: "💵" },
-    { key: "agendar", label: "Agendar pagamento", icon: "📅" },
-  ];
-
-  const abrirPagamento = (ag) => {
-    setMetodoPag("");
-    setDataPagAgendada("");
-    setPagamentoModal(ag);
-  };
-
-  const confirmarPagamento = async () => {
-    if (!metodoPag) { toast("Selecione o método de pagamento."); return; }
-    if (metodoPag === "agendar" && !dataPagAgendada) { toast("Informe a data do pagamento."); return; }
+  const aceitarRapido = async (ag) => {
     setSaving(true);
-    const updates = metodoPag === "agendar"
-        ? { status: "agendado", pagamentoAgendado: { data: dataPagAgendada, valor: pagamentoModal.valor, clienteNome: pagamentoModal.clienteNome, clienteEmail: pagamentoModal.clienteEmail, servicoNome: pagamentoModal.servicoNome } }
-        : { status: "concluido", metodoPagamento: metodoPag, pago: true, dataPagamento: new Date().toISOString() };
-    await updateAgendamento(empresa.id, pagamentoModal.id, updates);
-    if (metodoPag === "agendar") {
-        toast(`📅 Pagamento agendado! Agendamento aceito.`);
-    } else {
-        toast(`💰 Pagamento recebido! Agendamento aceito.`);
-    }
+    await updateAgendamento(empresa.id, ag.id, { status: "agendado" });
+    toast(`✅ Aceito: ${ag.clienteNome}`);
     setSaving(false);
-    setPagamentoModal(null);
     load();
   };
 
@@ -182,8 +154,8 @@ export default function OwnerDashboard() {
                       <div style={{ fontSize: 12, color: "#666" }}>{a.servicoNome} · {fmtDate(a.data)}</div>
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#534AB7", marginRight: 8 }}>{fmtMoney(a.valor)}</div>
-                    <button className="o-btn o-btn-primary o-btn-sm" onClick={() => abrirPagamento(a)} disabled={saving}>
-                      Aceitar e Pagar
+                    <button className="o-btn o-btn-primary o-btn-sm" onClick={() => aceitarRapido(a)} disabled={saving}>
+                      ✅ Aceitar
                     </button>
                   </div>
                 ))}
@@ -236,57 +208,6 @@ export default function OwnerDashboard() {
               </>
             )}
           </div>
-          
-          {/* Modal de Pagamento Dashboard */}
-          {pagamentoModal && (
-              <div className="owner-modal-overlay" onClick={() => setPagamentoModal(null)}>
-                  <div className="owner-modal" onClick={e => e.stopPropagation()}>
-                      <div className="owner-modal-handle" />
-                      <h3>✅ Aceitar e Registrar Pagamento</h3>
-
-                      <div style={{ background: "#f8f8f8", borderRadius: 12, padding: 14, marginBottom: 20 }}>
-                          <div style={{ fontWeight: 600, marginBottom: 4 }}>{pagamentoModal.clienteNome}</div>
-                          <div style={{ fontSize: 13, color: "#666" }}>{pagamentoModal.servicoNome}</div>
-                          <div style={{ fontSize: 18, fontWeight: 700, color: "#534AB7", marginTop: 8 }}>
-                              R$ {Number(pagamentoModal.valor || 0).toFixed(2)}
-                          </div>
-                      </div>
-
-                      <div style={{ marginBottom: 16 }}>
-                          <label className="owner-form-label" style={{ marginBottom: 10, display: "block" }}>Como será o pagamento?</label>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                              {METODOS.map(m => (
-                                  <button key={m.key} onClick={() => setMetodoPag(m.key)}
-                                      style={{ padding: "14px 16px", borderRadius: 12, border: `2px solid ${metodoPag === m.key ? "#534AB7" : "rgba(0,0,0,0.1)"}`, background: metodoPag === m.key ? "#EEEDFE" : "#fafafa", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
-                                      <span style={{ fontSize: 24 }}>{m.icon}</span>
-                                      <span style={{ fontWeight: 600, color: metodoPag === m.key ? "#534AB7" : "#333" }}>{m.label}</span>
-                                  </button>
-                              ))}
-                          </div>
-                      </div>
-
-                      {metodoPag === "agendar" && (
-                          <div className="owner-form-group" style={{ marginBottom: 16 }}>
-                              <label className="owner-form-label">Data do pagamento</label>
-                              <input
-                                  className="owner-input"
-                                  type="date"
-                                  value={dataPagAgendada}
-                                  min={new Date().toISOString().split("T")[0]}
-                                  onChange={e => setDataPagAgendada(e.target.value)}
-                              />
-                          </div>
-                      )}
-
-                      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                          <button className="o-btn o-btn-ghost" onClick={() => setPagamentoModal(null)}>Cancelar</button>
-                          <button className="o-btn o-btn-primary" onClick={confirmarPagamento} disabled={saving}>
-                              {saving ? "Salvando..." : metodoPag === "agendar" ? "📅 Agendar pagamento" : "✅ Confirmar pagamento"}
-                          </button>
-                      </div>
-                  </div>
-              </div>
-          )}
         </>
       )}
     </OwnerLayout>
